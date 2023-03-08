@@ -14,3 +14,5 @@ for i in range(D):
 print(arr[0],arr[1])
 #asdf
 print(arr[0],arr[1])
+#asdf
+print(arr[0],arr[1])
