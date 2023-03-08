@@ -1,0 +1,59 @@
+<style type="text/css">
+<!--
+
+a:link 		{ font-family: µ¸¿ò; text-decoration: none; color: #666666; font-size:12px; line-height:16px}
+a:visited 	{ font-family: µ¸¿ò; text-decoration: none; color: #666666; font-size:12px; line-height:16px}
+a:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+
+a.left1:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left1:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left1:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+
+a.site:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #666666; font-size:12px; line-height:16px}
+a.site:visited { font-family: µ¸¿ò; text-decoration: none; color: #666666; font-size:12px; line-height:16px}
+a.site:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #cc6699; font-size:12px; line-height:16px}
+
+table.tt_soho th { 
+	background-color:#4091C7;		
+}	
+
+table.tt_soho td.lastline { 
+	background-color:#4091C7;	
+	height:2;
+}
+
+
+table		{ font-family: µ¸¿ò; text-decoration: none; color: #666666; font-size:12px; line-height:16px}
+
+
+select		{ font-family: µ¸¿ò; font-size:12px; border : 1px solid #777777}
+
+
+input		{ font-family: µ¸¿ò; font-size:12px}
+
+
+textarea	{ font-family: µ¸¿ò; font-size:12px}
+
+
+
+.st	        { font-family: µ¸¿ò; font-size:11px; color: #333333; line-height:15px}
+.st2	    { font-family: µ¸¿ò; font-size:11px; color: #666666; line-height:14px}
+
+
+.bt	        { font-family: µ¸¿ò; font-size:16px; color: #666666; line-height:22px}
+
+
+.tit	    { font-family: µ¸¿ò; font-size:20px; line-height:30px}
+
+
+.login
+    { 	
+    	font-family: µ¸¿ò;    	
+		font-size: 12px;
+		color: #046F95;	
+		background: #E1F5F7;	
+        border : 1px solid #64BDD2;
+        }
+
+-->
+</style>

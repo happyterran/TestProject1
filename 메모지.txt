@@ -1,0 +1,11 @@
+
+# 준비사항1
+# .vox 없이도 복스플레이 되도록 준비 필요
+# LINEORDER 바이트 늘리기 필요.
+# PLAYVOX 할 때 OFFHOOK 먼저 하도록 수정 필요
+update LINEORDE
+set LINEORDER = 'PLAYVOX,F301760088'
+,	ORDERCONFI = '1'
+,	INSERTTIME = '130819170413'
+where LineNumber = '6'
+

@@ -1,0 +1,262 @@
+<!-- #include virtual = "/Include/CodePage0.asp" -->
+<!-- #include virtual = "/Include/Refresh.asp" -->
+<!-- #include virtual = "/Include/LoginCheck_NewWin.asp" -->
+<!-- #include virtual = "/Include/Function.asp" -->
+<!-- #include virtual = "/Include/Dbopen.asp" -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- #include virtual = "/Include/ace-header.asp" -->
+</head>
+<body>
+<FORM ID="SubjectUploadForm" METHOD="post" NAME="SubjectUploadForm" action="">
+<div class="navbar">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <a href="#" class="brand">
+            <small>
+            <i class="icon-leaf"></i>
+            전화결과 데이터 내보내기
+            </small>
+            </a><!--/.brand-->
+        </div>
+        <!--/.container-fluid-->
+    </div>
+    <!--/.navbar-inner-->
+</div>
+<div class="main-container container-fluid">
+    <!-- include virtual = "/Include/SideBar.asp" -->
+    <div class="main-content" style="margin-left:0;">
+        <!-- include virtual = "/Include/nav-search.asp" -->
+        <div class="page-content">
+            <div class="row-fluid">
+                <div class="span12">
+                    <!-- ######################################################################################### -->
+                    <!--PAGE CONTENT BEGINS-->
+                    <!-- ######################################################################################### -->
+                    <ul class="unstyled spaced">
+                        <li>
+                            <i class="icon-bell purple"></i>
+                            선택한 차수의 전화결과를 대학 DB로 전송합니다
+                        </li>
+                        <li>
+                            <i class="icon-ok green"></i>
+                            중복전송 방지를 위해 이미 내보내기 된 정보는 리스트업 되지 않습니다.
+                        </li>
+                    </ul>
+                    <div class="widget-box">
+                        <div class="widget-header widget-header-flat">
+                            <h4 class="smaller">
+                            내보낼 전화결과
+                            </h4>
+                            <div class="widget-toolbar">
+                                <%'전형구분 선택
+                                Dim RsO, FormDivision0
+                                Set RsO = Server.CreateObject("ADODB.Recordset")
+                                Dim StrSql
+                                StrSql =                   "select Division0, count(*)"
+                                StrSql = StrSql & vbCrLf & "from SubjectTable"
+                                StrSql = StrSql & vbCrLf & "group by Division0"
+                                StrSql = StrSql & vbCrLf & "order by Division0" & vbCrLf
+                                'response.write StrSql
+                                'response.end
+                                RsO.Open StrSql, Dbcon%>
+                                <SELECT id="FormDivision0" NAME="FormDivision0" style="width: 130px; height: 33px; margin-bottom: 2px;">
+                                <option value="">모집시기선택</option>
+                                <%do until RsO.eof%>
+                                <option value="<%=RsO("Division0")%>" <%if RsO("Division0") = FormDivision0 then response.write "selected"%>><%=RsO("Division0")%></option>
+                                <%RsO.MoveNext
+                                loop%>
+                                </SELECT>&nbsp;&nbsp;
+                                <%'차수 선택
+                                RsO.Close
+                                Dim FormDegree
+                                StrSql =                   "select cr.Degree, count(*)"
+                                StrSql = StrSql & vbCrLf & "from RegistRecord cr"
+                                StrSql = StrSql & vbCrLf & "join SubjectTable cct"
+                                StrSql = StrSql & vbCrLf & "on cr.SubjectCode = cct.SubjectCode"
+                                StrSql = StrSql & vbCrLf & "where cr.Degree <> '0'" & vbCrLf
+                                If FormDivision0 <> "" Then
+                                StrSql = StrSql & vbCrLf & "and cct.Division0 = '" & FormDivision0 & "'" & vbCrLf
+                                End If
+                                StrSql = StrSql & vbCrLf & "group by cr.Degree"
+                                StrSql = StrSql & vbCrLf & "order by cr.Degree" & vbCrLf
+                                'response.write StrSql
+                                'response.end
+                                RsO.Open StrSql, Dbcon%>
+                                <SELECT id="FormDegree" NAME="FormDegree" style="width: 100px; height: 33px; margin-bottom: 2px;">
+                                <option value="">차수선택</option>
+                                <%do until RsO.eof%>
+                                <option value="<%=RsO("Degree")%>" <%if RsO("Degree") = FormDivision0 then response.write "selected"%>><%=RsO("Degree")%></option>
+                                <%RsO.MoveNext
+                                loop%>
+                                </SELECT>&nbsp;&nbsp;
+                                <%RsO.Close
+                                Set RsO = Nothing%>
+                                <INPUT class="input" TYPE="button" value=" 레코드 확인 " style="height: 33px;" onclick="searchGetInfo();" style="cursor: pointer;" onFocus="blur();">
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            </div>
+                        </div>
+                        <div class="widget-body">
+                            <div class="widget-main" style="padding: 0;">
+                                <!-- 그리드 -->
+                                <DIV CLASS="pop_tblBox" ID="gridbox" NAME="gricbox" STYLE="WIDTH: 100%; HEIGHT: 295px"></DIV>
+                                <!--넓이에서 패딩 20px과 보더값 2px 빼기 (-22px)-->
+                                <DIV id="pagingArea" align="" STYLE="WIDTH: 616px; HEIGHT: 30px"></DIV>
+                                <!-- 그리드 -->
+                            </div>
+                        </div>
+                    </div>
+                    <div style="position: absolute; z-index:100; display: none; border:0px solid black; top: 240px; left: 0px; width: 99%; text-align: center;" id="Prog" name="Prog" >
+                        <img src="/Images/AjaxLoding.gif" width="32" height="32" border="0" alt="">
+                    </div>
+                    <div class="widget-box transparent" style="margin-top: 30px;">
+                        <div class="widget-header widget-header-small">
+                            <h4 class="blue smaller">
+                            <i class="icon-rss orange"></i>
+                            저장 버튼을 누르면 전화결과 데이터가 전송됩니다.
+                            </h4>
+                            <div class="widget-toolbar action-buttons" style="width:115px;">
+                                &nbsp;&nbsp;
+                                <a href="javascript: location.reload();" data-action="reload" >
+                                <i class="icon-refresh blue bigger-180"></i>
+                                </a>
+                                &nbsp;&nbsp;
+                                <a href="javascript: self.close();" class="pink">
+                                <i class="icon-remove red bigger-210"></i>
+                                </a>
+                                &nbsp;&nbsp;
+                                <a href="javascript: RegistUploadDataBaseSave();" class="pink" title="저장">
+                                <i class="icon-save skyblue bigger-180"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <iframe name="RegistBWCUploadDatabaseSaveFrame" width="600px" height="0px"  scrolling="no" frameborder="0" marginwidth="0" marginheight="0"></iframe>
+                    <!-- ######################################################################################### -->
+                    <!--PAGE CONTENT ENDS-->
+                    <!-- ######################################################################################### -->
+                </div>
+                <!--/.span -->
+            </div>
+            <!--/.row-fluid -->
+        </div>
+        <!--/.page-content -->
+        <!-- include virtual = "/Include/ace-settings-container.asp" -->
+    </div>
+    <!--/.main-content-->
+</div>
+<!--/.main-container-->
+<!-- include virtual = "/Include/footer-basic-scripts.asp" -->
+</body>
+</FORM>
+<script>
+    var MyDhtmlxGrid
+    MyDhtmlxGrid = new dhtmlXGridObject('gridbox');
+    MyDhtmlxGrid.setImagePath("./DHX3Pro/dhtmlxGrid/codebase/imgs/");
+    MyDhtmlxGrid.setHeader("모집코드,수험번호,이름,차수,결과,상담원,입력시각");
+    MyDhtmlxGrid.setInitWidths("85,85,85,58,85,85,140")
+    MyDhtmlxGrid.setColAlign("center,center,center,center,center,center,left")
+    MyDhtmlxGrid.setColTypes("ed,ed,ed,ed,ed,ed,ro");
+    MyDhtmlxGrid.setColSorting("str,str,str,int,str,str,date")
+    MyDhtmlxGrid.enablePaging(true, 10, 10, "pagingArea", true, "recinfoArea");
+    MyDhtmlxGrid.setPagingSkin("toolbar", "dhx_web");
+    MyDhtmlxGrid.setPagingWTMode(true,true,false,false);
+    MyDhtmlxGrid.setSkin("dhx_blue");
+    MyDhtmlxGrid.attachEvent("onKeyPress", onKeyPressed);
+    MyDhtmlxGrid.enableBlockSelection();
+    function onKeyPressed(code, ctrl, shift){
+        if (code == 67 && ctrl){
+            if (!MyDhtmlxGrid._selectionArea)
+                MyDhtmlxGrid.setCSVDelimiter("\t");
+            MyDhtmlxGrid.copyBlockToClipboard();
+        }
+        if (code == 86 && ctrl){
+            MyDhtmlxGrid.pasteBlockFromClipboard();
+        }
+        return true;
+    }
+    function protocolIt(str){
+        var p = document.getElementById("protocol");
+        p.innerHTML = "<li style='height:auto;'>" + str + "</li>" + p.innerHTML
+    }
+    function doOnRowSelected(id){
+    }
+    MyDhtmlxGrid.init();
+    MyDhtmlxGrid.attachEvent("onXLE", DoOnXLE);
+    function DoOnXLE(id,count){
+        document.getElementById("Prog").style.display = "none";
+        Loading = false
+        var count=MyDhtmlxGrid.getRowsNum();
+        if (count>0){
+            if (MyDhtmlxGrid.cellByIndex(0, 2).getValue().toString().toLowerCase()=="타임아웃"){
+                alert("로그인이 필요합니다.");
+                opener.document.location.href="/Login.asp";
+                opener.focus();
+                self.close();
+            }
+            if (MyDhtmlxGrid.cellByIndex(0, 1).getValue().toString().substring(0,5)=="--StrSql"){
+                alert(MyDhtmlxGrid.cellByIndex(0, 1).getValue().toString());
+            }
+        }
+    }
+    function myErrorHandler(type, desc, erData){
+        alert(erData[0].status)
+    }
+    dhtmlxError.catchError("ALL",function(a,b,data){
+    alert("입력파일에 문제가 있습니다.\n에러타입:"+data[0].status);
+    });
+    var RecordChecked = false
+    var Loading = false;
+    function searchGetInfo(){
+        if (document.getElementById("FormDivision0").value==""){
+            alert("내보낼 전형구분을 선택해 주세요")
+            return;
+        }
+        if (Loading){
+            alert("로딩중입니다. 잠시 기다리세요.");
+            return;
+        }
+        RecordChecked = true
+        var url = "process/RegistBWCUploadDatabaseGet.asp?func=0"
+        url = url + '&BursaryStatus2=<%=Session("BursaryStatus2")%>'
+        url = url + '&FormResult1=<%=Session("Result1")%>'
+        url = url + '&FormDivision0=' + escape(document.getElementById("FormDivision0").value);
+        url = url + '&FormDegree=' + escape(document.getElementById("FormDegree").value);
+        //window.open(url);
+        MyDhtmlxGrid.clearAndLoad(url);
+        document.getElementById("Prog").style.display = "block";
+        Loading = true;
+        if (SubjectUploadForm.FormDivision0.value==""){
+            alert("내보낼 전형을 선택해 주세요")
+            return;
+        }
+        if (Uploading){
+            alert("레코드 확인중입니다. 잠시 기다리세요.");
+            return;
+        }
+        SavedFileName = SubjectUploadForm.FormDivision0.value;
+        loadXML(SavedFileName, FormDegree);
+        document.getElementById("Prog").style.display = "block";
+        Uploading = true
+    }
+    function RegistUploadDataBaseSave(){
+        if(RecordChecked==false){
+            alert("레코드 확인을 먼저 하세요.");
+            return;
+        }
+        if (MyDhtmlxGrid.getRowsNum() == 0){
+            alert("내보낼 레코드가 없습니다.");
+            return;
+        }
+        var url = "process/RegistBWCUploadSave.asp?func=0"
+        url = url + '&BursaryStatus2=<%=Session("BursaryStatus2")%>'
+        url = url + '&FormResult1=<%=Session("Result1")%>'
+        url = url + '&FormDivision0=' + escape(document.getElementById("FormDivision0").value);
+        url = url + '&FormDegree=' + escape(document.getElementById("FormDegree").value);
+		//window.open(url);
+        RegistBWCUploadDatabaseSaveFrame.document.location.href=url;
+    }
+</script>
+</html>
+<!-- #include virtual = "/Include/Dbclose.asp" -->

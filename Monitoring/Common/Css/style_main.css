@@ -1,0 +1,136 @@
+<style type="text/css">
+<!--
+
+a:link 		{ font-family: µ¸¿ò; text-decoration: none; color: #000000; font-size:12px; line-height:16px}
+a:visited 	{ font-family: µ¸¿ò; text-decoration: none; color: #000000; font-size:12px; line-height:16px}
+a:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+a:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+
+a.left1:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left1:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left1:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+a.left1:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+
+a.left2:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left2:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left2:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #663300; font-size:12px; line-height:16px}
+a.left2:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #663300; font-size:12px; line-height:16px}
+
+a.left3:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left3:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left3:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #993300; font-size:12px; line-height:16px}
+a.left3:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #993300; font-size:12px; line-height:16px}
+
+a.left4:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left4:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left4:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #990000; font-size:12px; line-height:16px}
+a.left4:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #990000; font-size:12px; line-height:16px}
+
+a.left5:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left5:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left5:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #006699; font-size:12px; line-height:16px}
+a.left5:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #006699; font-size:12px; line-height:16px}
+
+a.left6:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left6:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left6:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #004499; font-size:12px; line-height:16px}
+a.left6:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #004499; font-size:12px; line-height:16px}
+
+a.left7:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left7:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left7:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+a.left7:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+
+a.left8:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left8:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.left8:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+a.left8:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+
+
+
+a.main1:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #996600; font-size:12px; line-height:16px}
+a.main1:visited { font-family: µ¸¿ò; text-decoration: none; color: #660000; font-size:12px; line-height:16px}
+a.main1:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #660000; font-size:12px; line-height:16px}
+
+a.main2:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main2:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main2:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #663300; font-size:12px; line-height:16px}
+a.main2:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #663300; font-size:12px; line-height:16px}
+
+a.main3:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main3:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main3:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #993300; font-size:12px; line-height:16px}
+a.main3:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #993300; font-size:12px; line-height:16px}
+
+a.main4:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main4:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main4:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #990000; font-size:12px; line-height:16px}
+a.main4:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #990000; font-size:12px; line-height:16px}
+
+a.main5:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main5:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main5:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #006699; font-size:12px; line-height:16px}
+a.main5:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #006699; font-size:12px; line-height:16px}
+
+a.main6:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main6:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main6:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #004499; font-size:12px; line-height:16px}
+a.main6:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #004499; font-size:12px; line-height:16px}
+
+a.main7:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main7:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main7:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+a.main7:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+
+a.main8:link 	{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main8:visited { font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+a.main8:hover 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+a.main8:active 	{ font-family: µ¸¿ò; text-decoration: none; color: #000099; font-size:12px; line-height:16px}
+
+
+
+table		{ font-family: µ¸¿ò; text-decoration: none; color: #333333; font-size:12px; line-height:16px}
+
+
+select		{ font-family: µ¸¿ò; font-size:12px; border : 1px solid #777777}
+
+
+input		{ font-family: µ¸¿ò; font-size:12px}
+
+
+textarea	{ font-family: µ¸¿ò; font-size:12px}
+
+
+.st	        { font-family: µ¸¿ò; font-size:11px; color: #333333; line-height:15px}
+.st2	    { font-family: µ¸¿ò; font-size:11px; color: #666666; line-height:14px}
+
+
+.bt	        { font-family: µ¸¿ò; font-size:16px; color: #666666; line-height:22px}
+
+
+.tt	        { font-family: µ¸¿ò; font-size:12px; color: #003366; line-height:16px; background-color: #E1F5FF}
+.tt2        { font-family: µ¸¿ò; font-size:12px; color: #0D5067; line-height:16px; background-color: #E2FAFF}
+.tt3        { font-family: µ¸¿ò; font-size:12px; color: #006B75; line-height:16px; background-color: #E4FFFE}
+.tt4        { font-family: µ¸¿ò; font-size:12px; color: #255600; line-height:16px; background-color: #F5FFE1}
+.tt5        { font-family: µ¸¿ò; font-size:12px; color: #6C4000; line-height:16px; background-color: #FFF8E1}
+.tt6        { font-family: µ¸¿ò; font-size:12px; color: #6A2400; line-height:16px; background-color: #FFF3EE}
+.tt7        { font-family: µ¸¿ò; font-size:12px; color: #690011; line-height:16px; background-color: #FFEFF1}
+.tt8        { font-family: µ¸¿ò; font-size:12px; color: #690011; line-height:16px; background-color: #FFEFF1}
+
+
+.sms	    { font-family: µ¸¿ò; font-size:12px; border : 1px solid #cccccc}
+.view	    { font-family: µ¸¿ò; font-size:12px; border : 1px}
+.tit	    { font-family: µ¸¿ò; font-size:20px; line-height:30px}
+
+
+.login
+    { 	
+    	font-family: µ¸¿ò;    	
+		font-size: 12px;
+		color: #004d75;	
+		background: #d7eaf1;	
+        border : 1px solid #65787e;
+        }
+
+-->
+</style>

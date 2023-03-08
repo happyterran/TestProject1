@@ -1,0 +1,64 @@
+Date : 2019-02-25 오후 1:19:05
+Domain : 10.31.11.190
+Browser : Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36
+COM Error Number : -2147217865 (0x80040E37)
+File Name : /StatsSubject.asp
+Line Number : 116
+Brief Description : 개체 이름 '##StatsSubjectCounts'이(가) 잘못되었습니다.
+
+Date : 2019-02-25 오후 1:20:48
+Domain : 10.31.11.190
+Browser : Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36
+COM Error Number : -2147217865 (0x80040E37)
+File Name : /StatsSubject.asp
+Line Number : 116
+Brief Description : 개체 이름 '##StatsSubjectCounts'이(가) 잘못되었습니다.
+
+Date : 2019-02-25 오후 2:02:48
+Domain : mjc
+Browser : Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36
+IIS Error Number : ASP 0251
+COM Error Number : -2147467259 (0x80004005)
+File Name : /MatrixHtmlRecord.asp
+Line Number : 288
+Brief Description : Response 버퍼 제한 초과됨
+Full Description : ASP 페이지를 실행하여 Response 버퍼의 구성된 제한이 초과되었습니다.
+
+Date : 2019-02-25 오후 2:02:51
+Domain : mjc
+Browser : Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36
+IIS Error Number : ASP 0251
+COM Error Number : -2147467259 (0x80004005)
+File Name : /MatrixHtmlRecord.asp
+Line Number : 288
+Brief Description : Response 버퍼 제한 초과됨
+Full Description : ASP 페이지를 실행하여 Response 버퍼의 구성된 제한이 초과되었습니다.
+
+Date : 2019-02-25 오후 2:03:00
+Domain : mjc
+Browser : Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36
+IIS Error Number : ASP 0251
+COM Error Number : -2147467259 (0x80004005)
+File Name : /MatrixHtmlRecord.asp
+Line Number : 288
+Brief Description : Response 버퍼 제한 초과됨
+Full Description : ASP 페이지를 실행하여 Response 버퍼의 구성된 제한이 초과되었습니다.
+
+Date : 2019-02-25 오후 2:03:05
+Domain : mjc
+Browser : Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36
+IIS Error Number : ASP 0251
+COM Error Number : -2147467259 (0x80004005)
+File Name : /MatrixHtmlRecord.asp
+Line Number : 288
+Brief Description : Response 버퍼 제한 초과됨
+Full Description : ASP 페이지를 실행하여 Response 버퍼의 구성된 제한이 초과되었습니다.
+
+Date : 2019-02-25 오후 4:32:05
+Domain : 10.31.11.190
+Browser : Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Safari/537.36
+COM Error Number : -2147217865 (0x80040E37)
+File Name : /StatsSubject.asp
+Line Number : 116
+Brief Description : 개체 이름 '##StatsSubjectCounts'이(가) 잘못되었습니다.
+
