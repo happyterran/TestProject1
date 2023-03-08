@@ -1,0 +1,832 @@
+
+
+/********************************************************************************************
+    석차계산 대상자 가져오기  (커서 생성)
+    I. 동점자 처리기준
+    - [일반전형]은 대학수학능력시험성적이 높은 자 - 1순위 하위 기준은 동일
+    
+    - [일반계고교전형, 전문계고교전형, 독자전형, 농어촌학생전형, 기초생활수급자전형]은
+        하위 동점자 처리 기준 적용
+    --------------------------------------------------------------------------------
+    1.	대학수학능력시험 성적이 높은 자
+    2.  환산점수가 높은자
+    3.  2학년 2학기 환산평균등급이 높은자
+    4.  2학년 1학기 환산평균등급이 높은자
+    5.  전학년 결석일수가 적은자
+    6.  이수단위합이 높은 자
+    7.  2학년 2학기 이수단위합이 높은자
+    8.  2학년 1학기 이수단위합이 높은자
+    9.  이수과목수가 높은 자
+    10.  2학년 2학기 이수과목수가 높은자
+    11. 2학년 1학기 이수과목수가 높은자
+    12. 최근 연도 졸업(예정)자
+    13. 2학년 2학기 학생부 상위 5개 과목 환산평균등급 상위자
+    14. 2학년 1학기 학생부 상위 5개 과목 환산평균등급 상위자
+    15. 2학년 전체 재적생수가 많은 자
+    16. 2학년 2학기 전체 재적생수가 많은 자
+
+
+    II. 검정고시 전형은 상위 항목 적용후에도 동점자 발생시 취득성적 총점이 높은 자 기준 적용
+    * 검정고시 전형 *
+    
+    1. 환산점수가 높은자
+    2. 환산평균등급이 높은자
+    3. 이수단위합이 높은 자
+    4. 이수과목수가 높은 자
+    5. 최근연도 졸업(예정)자
+    6. 상위 5과목 환산평균등급 상위자
+    7. 총점이 높은 자 기준 (검정고시 과목 총점)
+
+    2012-11-08
+    * 검정고시 출신자는 상위 3개 항목 적용 후에도 동점자 발생 시
+
+        취득성적 총점이 높은 자
+        상위 3개 과목 환산평균등급 상위자
+        상위 2개 과목 환산평균등급 상위자
+*****************************************************************************************/
+BEGIN
+
+    IF @IN_JIMANG_GUBUN = '1'
+    
+        UPDATE dbo.IR_IPSIMAST_M SET
+            SEOKCHA		= X.RANK_ORDER
+            , UPDATE_ID	= @IN_UPDATE_ID
+            , UPDATE_IP	= @IN_UPDATE_IP
+            , UPDATE_PGM	= @IN_UPDATE_PGM
+            , UPDATE_DATE	= GETDATE()
+            FROM	(
+                    SELECT	/* 2013년까지의 동점자 처리기준 적용 */
+                        CASE WHEN CAST(@IN_IPHAK_YEAR AS NUMERIC) <= 2013 THEN
+
+                                    RANK() OVER(PARTITION BY	A.IPHAK_YEAR,
+                                                            A.MOJIP_CD,
+                                                            A.MOJIPCHASU_CD,
+                                                            A.JIMANGHAKGWA1_CD,
+                                                            A.JIMANGJUYA1_CD,
+                                                            A.JEONHYEONG_CD,
+                                                            ISNULL(A.SEBU_JEONHYEONG_CD, '')
+
+                                                    ORDER BY	A.IPSI_TOTPNT						DESC,										--0.	총점순
+                                                            E.SUNEUNG_TOTPNT					DESC,										--1.	대학수학능력시험성적이 높은 자
+                                                            B.HAKSAENGBU_TOTPNT					DESC,										--2.	환산점수 높은자															
+                                                            B.AVG_GRADE2						ASC,										--3.	2학년 2학기 환산평균등급이 높은자
+                                                            B.AVG_GRADE1						ASC,										--4.	2학년 1학기 환산평균등급이 높은자
+                                                            ISNULL(B.GYEOSEOK_ILSU, 0)			ASC,										--5.	전학년 결석일수가 적은자
+                                                            ISNULL(A.GYEOLSEOK_ILSU, 0)			ASC,										--5.1	서류전형 대상자용 결석일수
+                                                            B.SUM_UNIT							DESC,										--6.	이수단위합이 높은 자
+                                                            B.SUM_UNIT2							DESC,										--7.	2학년 2학기 이수단위합이 높은자
+                                                            B.SUM_UNIT1							DESC,										--8.	2학년 1학기 이수단위합이 높은자
+                                                            B.GWAMOK_SU							DESC,										--9.	이수과목수가 높은 자
+                                                            B.GWAMOK_SU2						DESC,										--10.	2학년 2학기 이수과목수가 높은자
+                                                            B.GWAMOK_SU1						DESC,										--11.	2학년 1학기 이수과목수가 높은자
+                                                            CASE WHEN LEFT(A.SUHEOM_NO, 1) != 'S' AND ISNUMERIC(A.GOGYO_JOLEOP_YEAR) = 1 THEN
+                                                                        CAST(A.GOGYO_JOLEOP_YEAR AS NUMERIC)
+                                                                    ELSE 0
+                                                            END									DESC,										--12.	최근 연도 졸업(예정)자
+                                                            
+                                                            B.GWAMOK5_AVG_GRADE2				ASC,										--13.	2학년 2학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            B.GWAMOK5_AVG_GRADE1				ASC,										--14.	2학년 1학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            
+                                                            B.TOT_JAEJEOKSAENG					DESC,										--15.	2학년 전체 재적생수가 많은 자
+                                                            B.TOT_JAEJEOKSAENG2					DESC,										--16.	2학년 2학기 전체 재적생수가 많은 자
+                                                            
+                                                            B.GEUMJEONG_CHONGJEOM				DESC,										--17-1. 총점이 높은 자 기준 (검정고시 과목 총점)
+                                                            IPSI.dbo.SF_IC_GWAMOK5_AVG_GRADE(A.IPHAK_YEAR, A.SUHEOM_NO, '', '', '3') ASC,	--17-2. 상위 3개 과목 환산평균등급 상위자
+                                                            IPSI.dbo.SF_IC_GWAMOK5_AVG_GRADE(A.IPHAK_YEAR, A.SUHEOM_NO, '', '', '2') ASC	--17-3. 상위 2개 과목 환산평균등급 상위자
+                                                            
+                                                            /* 전문대학이상졸업(예정)자전형 */
+                                                            --A.DAEJOL_PERCTG_SCORE					DESC,									-- 백분위점수가 높은 자
+                                                            --CAST(ISNULL(IC062.CD_NM, 0) AS NUMERIC) DESC,									-- 최종학기 평점평균이 높은 자
+                                                            --A.DAEJOL_TOT_ACQU_CDT					DESC,									-- 총 취득학점이 높은 자
+                                                            --A.GRAD_UNIV_SCHL_GRAD_DT				DESC									-- 최근 졸업(예정)자
+                                                            )
+
+                            /* 2014년 이후 2017년 까지 동점자 처리기준 적용 */
+                            ELSE
+                            CASE WHEN CAST(@IN_IPHAK_YEAR AS NUMERIC) <= 2017 THEN
+                            
+                            RANK() OVER(PARTITION BY		A.IPHAK_YEAR,
+                                                            A.MOJIP_CD,
+                                                            A.MOJIPCHASU_CD,
+                                                            --C.JEONGWONNAEOE_GBCD,
+                                                            A.JIMANGHAKGWA1_CD,
+                                                            A.JIMANGJUYA1_CD,
+                                                            A.JEONHYEONG_CD,
+                                                            A.SEBU_JEONHYEONG_CD
+
+                                                    ORDER BY	A.IPSI_TOTPNT						DESC,	--0.	총점순
+                                                            E.SUNEUNG_TOTPNT					DESC,	--1.	대학수학능력시험성적이 높은 자
+                                                            B.AVG_GRADE2						ASC,	--2.	2학년 2학기 환산평균등급이 높은자
+                                                            B.AVG_GRADE1						ASC,	--3.	2학년 1학기 환산평균등급이 높은자
+                                                            B.SUM_UNIT							DESC,	--4.	이수단위합이 높은 자
+                                                            B.GWAMOK_SU							DESC,	--5.	이수과목수가 높은 자
+                                                            B.GWAMOK5_AVG_GRADE2				ASC,	--6.	2학년 2학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            B.GWAMOK5_AVG_GRADE1				ASC,	--7.	2학년 1학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            B.TOT_JAEJEOKSAENG					DESC,	--8.	2학년 전체 재적생수가 많은 자
+                                                            
+                                                            B.GEUMJEONG_ISUDANWI_CHONGJEOM		DESC,	--8-1.	이수단위 적용 환산 총점수가 높은 자
+                                                            B.GEUMJEONG_CHONGJEOM				DESC,	--8-2.	취득성적 총점이 높은 자
+                                                            
+                                                            /* 전문대학이상졸업(예정)자전형 */
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.IPSI_TOTPNT ELSE 0 END DESC, -- 120점 만점 환산점수
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_PERCTG_SCORE	ELSE 0 END	DESC,		-- 백분위점수가 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_LAST_PYEONGJEOMAVG ELSE 0 END DESC,	-- 최종학기 평점평균이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_TOT_ACQU_CDT ELSE 0 END	DESC,		-- 총 취득학점이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.GRAD_UNIV_SCHL_GRAD_DT ELSE 0 END DESC		-- 최근 졸업(예정)자
+                                                            )
+                        
+                        /* 2018년 이후 동점자 처리기준 적용 */
+                        ELSE								
+                            RANK() OVER(PARTITION BY		A.IPHAK_YEAR,
+                                                            A.MOJIP_CD,
+                                                            A.MOJIPCHASU_CD,
+                                                            --C.JEONGWONNAEOE_GBCD,
+                                                            A.JIMANGHAKGWA1_CD,
+                                                            A.JIMANGJUYA1_CD,
+                                                            A.JEONHYEONG_CD,
+                                                            A.SEBU_JEONHYEONG_CD
+
+                                                    ORDER BY	A.IPSI_TOTPNT																			DESC,	--0.	총점순
+                                                            CASE WHEN A.JEONHYEONG_CD = '29' THEN E.SUNEUNG_TOTPNT WHEN A.JEONHYEONG_CD = '31' THEN E.SUNEUNG_TOTPNT ELSE 0 END		DESC,	--1.	대학수학능력시험성적이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '29' THEN E.GWAMOK3_GRADE WHEN A.JEONHYEONG_CD = '31' THEN E.GWAMOK3_GRADE ELSE 0 END		ASC,    --1-2   대학수학능력시험 한국사 성적이 높은 자
+                                                            CASE WHEN A.JIWONJA_GBCD = '03' THEN B.AVG_GRADE1 ELSE S.HGRADE	END						ASC,	--2.	상위학기 환산평균등급이 높은자
+                                                            CASE WHEN A.JIWONJA_GBCD = '03' THEN B.AVG_GRADE1 ELSE S2.HGRADE	END					ASC,	--3.	하위학기 환산평균등급이 높은자
+                                                            S.UNIT_SUM + S2.UNIT_SUM																DESC,	--4.	이수단위합이 높은 자
+                                                            CASE WHEN A.JIWONJA_GBCD = '03' THEN G.GWAMOK_SUM ELSE S.GWAMOKSU + S2.GWAMOKSU END		DESC,	--5.	이수과목수가 높은 자
+                                                            CASE WHEN S.HGRADE = S2.HGRADE THEN T_AVG5.GWAMOK5_AVG ELSE S.GWAMOK5_AVG END			ASC,	--6.	상위학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            CASE WHEN A.JIWONJA_GBCD = '03' THEN G.GWAMOK5_AVG END									ASC,
+                                                            CASE WHEN S.HGRADE = S2.HGRADE THEN B_AVG5.GWAMOK5_AVG ELSE S2.GWAMOK5_AVG END			ASC,	--7.	하위학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            CASE WHEN A.JIWONJA_GBCD = '03' THEN G.GWAMOK5_AVG END									ASC,
+                                                            S.WONJUMSU													DESC,	--8.    상위학기 학생부 성적의 원점수 평균 상위자
+                                                            S2.WONJUMSU													DESC,	--9.    하위학기 학생부 성적의 원점수 평균 상위자
+                                                            S.SCOUNT + S2.SCOUNT										DESC,	--10.	2학년 전체 재적생수가 많은 자
+                                                            
+                                                            B.GEUMJEONG_ISUDANWI_CHONGJEOM								DESC,	--11-1.	이수단위 적용 환산 총점수가 높은 자
+                                                            B.GEUMJEONG_CHONGJEOM										DESC,	--11-2.	취득성적 총점이 높은 자
+                                                            G.KOR + G.ENG + G.MATH										DESC,   --11-3. 국어, 영어, 수학 과목 합산 취득 총점수가 높은 자
+                                                            G.HIS														DESC,   --11-4. 국사 과목 취득 점수가 높은 자
+                                                            G.SOC														DESC,   --11-5. 사회 과목 취득 점수가 높은 자
+                                                            G.SCI														DESC,   --11-6. 과학 과목 취득 점수가 높은 자
+                                                            CASE WHEN G.ETC1 > G.ETC2 THEN G.ETC1 ELSE G.ETC2 END		DESC,   --11-7. 선택 과목 취득 점수가 높은 자
+                                                            CASE WHEN G.ETC1 = G.ETC2 THEN G.ETC1 END					DESC,
+                                                                                            
+                                                            /* 전문대학이상졸업(예정)자전형 */
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.IPSI_TOTPNT ELSE 0 END DESC, -- 120점 만점 환산점수
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_PERCTG_SCORE	ELSE 0 END	DESC,		-- 백분위점수가 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_LAST_PYEONGJEOMAVG ELSE 0 END DESC,	-- 최종학기 평점평균이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_TOT_ACQU_CDT ELSE 0 END	DESC,		-- 총 취득학점이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.GRAD_UNIV_SCHL_GRAD_DT ELSE 0 END DESC		-- 최근 졸업(예정)자
+                                                            )
+                        END
+
+                    END									AS RANK_ORDER,
+                    A.IPHAK_YEAR						AS IPHAK_YEAR,
+                    A.MOJIP_CD							AS MOJIP_CD,
+                    A.MOJIPCHASU_CD						AS MOJIPCHASU_CD,
+                    A.JIWONJA_GBCD						AS JIWONJA_GBCD,
+                    A.JIMANGHAKGWA1_CD					AS JIMANGHAKGWA1_CD,
+                    A.JIMANGJUYA1_CD					AS JIMANGJUYA1_CD,
+                    A.JEONHYEONG_CD						AS JEONHYEONG_CD,
+                    A.SUHEOM_NO							AS SUHEOM_NO,
+                    A.SUHEOMSAENG_NM					AS SUHEOMSAENG_NM,
+                    CASE WHEN ISNUMERIC(A.GOGYO_JOLEOP_YEAR) = 1 THEN
+                                CAST(A.GOGYO_JOLEOP_YEAR AS NUMERIC)
+                            ELSE 0
+                    END									AS GOGYO_JOLEOP_YEAR,
+                    A.IPSI_TOTPNT						AS IPSI_TOTPNT,
+                    E.SUNEUNG_TOTPNT					AS SUNEUNG_TOTPNT,
+                    B.GYEOSEOK_ILSU						AS GYEOSEOK_ILSU,
+                    B.HAKSAENGBU_TOTPNT					AS HAKSAENGBU_TOTPNT,
+                    B.AVG_GRADE1						AS AVG_GRADE,
+                    S.UNIT_SUM + S2.UNIT_SUM			AS ISU_SUM,
+                    CASE WHEN A.JIWONJA_GBCD = '03' THEN G.GWAMOK_SUM ELSE S.GWAMOKSU + S2.GWAMOKSU	END	AS GWAMOK_SUM,
+                    S.SCOUNT + S2.SCOUNT				AS TOT_JAEJEOKSAENG2,
+                    CASE WHEN A.JIWONJA_GBCD = '03' THEN B.AVG_GRADE1 ELSE S.HGRADE	END		AS MAX_GRADE,
+                    CASE WHEN A.JIWONJA_GBCD = '03' THEN B.AVG_GRADE1 ELSE S2.HGRADE	END		AS MIN_GRADE,
+                    CASE WHEN A.JIWONJA_GBCD = '03' THEN G.GWAMOK5_AVG ELSE
+                        CASE WHEN S.HGRADE = S2.HGRADE THEN T_AVG5.GWAMOK5_AVG ELSE S.GWAMOK5_AVG END END				AS MAX_GWAMOK5_AVG,
+                    CASE WHEN A.JIWONJA_GBCD = '03' THEN G.GWAMOK5_AVG ELSE
+                        CASE WHEN S.HGRADE = S2.HGRADE THEN B_AVG5.GWAMOK5_AVG ELSE S2.GWAMOK5_AVG END END				AS MIN_GWAMOK5_AVG,
+                    S.WONJUMSU							AS MAX_WONJUMSU,
+                    S2.WONJUMSU							AS MIN_WONJUMSU,
+                    B.GEUMJEONG_CHONGJEOM				AS GEUMJEONG_CHONGJEOM,
+                    G.KOR + G.ENG + G.MATH				AS GEUMJEONG_KEM,
+                    G.HIS								AS GEUMJEONG_HIS,
+                    G.SOC								AS GEUMJEONG_SOC,
+                    G.SCI								AS GEUMJEONG_SCI,
+                    CASE WHEN G.ETC1 > G.ETC2 THEN G.ETC1 ELSE G.ETC2 END AS GEUMJEONG_ETC
+                    
+                FROM	dbo.IR_IPSIMAST_M A WITH(NOLOCK)
+
+                /*
+
+                    JOIN
+                    
+                    dbo.IR_MOJIPINWON_M C WITH(NOLOCK)
+
+                ON	A.IPHAK_YEAR		= C.IPHAK_YEAR
+                AND	A.MOJIP_CD			= C.MOJIP_CD
+                AND	A.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                AND	A.JIMANGHAKGWA1_CD	= C.MOJIPDANWI_CD
+                AND	A.JEONHYEONG_CD		= C.JEONHYEONG_CD
+                AND	A.JIMANGJUYA1_CD	= C.JUYA_CD
+
+                */
+
+                    LEFT JOIN
+
+                    dbo.IR_HAKSAENGBU_M B WITH(NOLOCK)
+                
+                ON	A.IPHAK_YEAR	= B.IPHAK_YEAR
+                AND	A.SUHEOM_NO		= B.SUHEOM_NO
+
+                    LEFT JOIN
+
+                    dbo.IR_SUNEUNG_M E WITH(NOLOCK)
+
+                ON	A.IPHAK_YEAR	= E.IPHAK_YEAR
+                AND	A.JUMIN_NO		= E.JUMIN_NO
+                AND	A.SUNEUNG_NO	= E.SUNEUNG_NO
+
+                    LEFT JOIN
+                    
+                    dbo.IR_JEONJEOKDAEHWANSANPYO_M DAEHWANSAN WITH(NOLOCK)
+
+                ON	A.IPHAK_YEAR					= DAEHWANSAN.IPHAK_YEAR
+                AND	A.MOJIP_CD						= DAEHWANSAN.MOJIP_CD
+                AND	A.MOJIPCHASU_CD					= DAEHWANSAN.MOJIPCHASU_CD
+                AND	A.DAEJOL_PYEONGJEOMAVG_MANPNT	= DAEHWANSAN.PYEONGJEOM_CD
+                AND	A.DAEJOL_LAST_PYEONGJEOMAVG BETWEEN DAEHWANSAN.PYEONGJEOM_FROM AND DAEHWANSAN.PYEONGJEOM_TO
+
+                    LEFT OUTER JOIN COMMON.dbo.SF_CS_COMMON_UPCODE('IC062') IC062
+
+                ON	IC062.CD = DAEHWANSAN.HWANSAN_CD
+                
+                LEFT JOIN
+                (
+                SELECT
+                    M.IPHAK_YEAR	AS IPHAK_YEAR,
+                    M.SUHEOM_NO		AS SUHEOM_NO,
+                    M.GRADE			AS GRADE,
+                    M.TERM			AS TERM,
+                    M.UNIT_SUM		AS UNIT_SUM,								-- 이수단위 합
+                    M.GWAMOKSU		AS GWAMOKSU,								-- 과목수
+                    M.GRADE_SUM		AS GRADE_SUM,								-- 환산등급 합
+                    M.HWANSAN_GRADE	AS HGRADE,									-- 환산평균등급
+                    M.STUDENTCOUNT	AS SCOUNT,									-- 재적수
+                    --CAST(CAST(M.WONJUMSU AS NUMERIC(3)) / CAST(M.GWAMOKSU AS NUMERIC(3)) AS NUMERIC(8, 5))	AS WONJUMSU,			-- 원점수 평균
+                    CAST(M.WONJUMSU / CAST(M.GWAMOKSU AS NUMERIC(3)) AS NUMERIC(8, 5))	AS WONJUMSU,			-- 원점수 평균
+                    dbo.SF_IC_GWAMOK5_AVG_GRADE(M.IPHAK_YEAR, M.SUHEOM_NO, M.GRADE, M.TERM, '5')	AS GWAMOK5_AVG
+                FROM
+                    (
+                    SELECT	
+                        A.IPHAK_YEAR																												AS IPHAK_YEAR
+                        , A.SUHEOM_NO																													AS SUHEOM_NO
+                        , B.GRADE																														AS GRADE
+                        , B.TERM																														AS TERM
+                        , CASE WHEN GRADE = '2' THEN SUM(CONVERT(INTEGER, B.STUDENTCOUNT)) END														AS STUDENTCOUNT
+                        , SUM(CONVERT(INTEGER, B.ORIGINALSCORE))																						AS WONJUMSU
+                        , CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))	AS HWANSAN_GRADE
+                        , SUM(CAST(UNIT AS NUMERIC(2)))																								AS UNIT_SUM
+                        , SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2)))															AS GRADE_SUM
+                        , COUNT(*)																													AS GWAMOKSU
+                        , ROW_NUMBER () OVER(PARTITION BY A.SUHEOM_NO ORDER BY CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))) RNK
+                    FROM	IR_IPSIMAST_M A	
+
+                        LEFT OUTER JOIN
+                        dbo.IR_SUBJECTSCORE_M B
+                    ON	A.IPHAK_YEAR = B.IPHAK_YEAR
+                    AND	A.SUHEOM_NO = B.SUHEOM_NO
+                    AND	B.GRADE	in ('2','3')
+                    AND NOT  (B.GRADE = '3' AND TERM = '2')
+                    AND	B.RANKINGGRADE IN ('1','2','3','4','5','6','7','8','9') 
+
+                        LEFT OUTER JOIN
+
+                        dbo.IR_SEONGJEOKYOSOBAEJEOM_M C
+
+                    ON  A.IPHAK_YEAR		= C.IPHAK_YEAR
+                    AND	A.MOJIP_CD			= C.MOJIP_CD
+                    AND	A.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                    AND	A.JIMANGHAKGWA1_CD	= C.MOJIPDANWI_CD
+                    AND	A.JEONHYEONG_CD		= C.JEONHYEONG_CD
+                    
+                    WHERE	A.IPHAK_YEAR		= @IN_IPHAK_YEAR
+                    AND	A.MOJIP_CD			= @IN_MOJIP_CD
+                    AND	A.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+                    AND	A.JIWONJA_GBCD	   != '03'
+                    AND	C.SEONGJEOKYOSO_CD	= '01'
+                    AND NOT EXISTS(SELECT 1
+                                    FROM COMMON.dbo.SF_CS_COMMON_UPCODE('IC034') IC034
+                                    WHERE A.BULHAKGYEOK_SAYU_CD = IC034.CD
+                                        AND IC034.CD2 = '1')
+                
+                GROUP BY A.IPHAK_YEAR, A.SUHEOM_NO, B.GRADE, B.TERM
+                ) M
+                WHERE M.RNK = 1
+                ) S
+                ON A.IPHAK_YEAR = S.IPHAK_YEAR
+                AND A.SUHEOM_NO  = S.SUHEOM_NO
+                
+                LEFT JOIN
+                (
+                SELECT
+                    M2.IPHAK_YEAR	AS IPHAK_YEAR,
+                    M2.SUHEOM_NO		AS SUHEOM_NO,
+                    M2.GRADE			AS GRADE,
+                    M2.TERM			AS TERM,
+                    M2.UNIT_SUM		AS UNIT_SUM,
+                    M2.GWAMOKSU		AS GWAMOKSU,    -- 과목수
+                    M2.GRADE_SUM		AS GRADE_SUM,
+                    M2.HWANSAN_GRADE	AS HGRADE,
+                    M2.STUDENTCOUNT	AS SCOUNT,		-- 재적수
+                    --CAST(CAST(M2.WONJUMSU AS NUMERIC(3)) / CAST(M2.GWAMOKSU AS NUMERIC(3)) AS NUMERIC(8, 5))	AS WONJUMSU,			-- 원점수 평균
+                    CAST(M2.WONJUMSU / CAST(M2.GWAMOKSU AS NUMERIC(3)) AS NUMERIC(8, 5))	AS WONJUMSU,			-- 원점수 평균
+                    dbo.SF_IC_GWAMOK5_AVG_GRADE(M2.IPHAK_YEAR, M2.SUHEOM_NO, M2.GRADE, M2.TERM, '5')	AS GWAMOK5_AVG
+                FROM
+                    (
+                    SELECT	
+                        A.IPHAK_YEAR																												AS IPHAK_YEAR
+                        , A.SUHEOM_NO																													AS SUHEOM_NO
+                        , B.GRADE																														AS GRADE
+                        , B.TERM																														AS TERM
+                        , CASE WHEN GRADE = '2' THEN SUM(CONVERT(INTEGER, B.STUDENTCOUNT)) END														AS STUDENTCOUNT
+                        , SUM(CONVERT(INTEGER, B.ORIGINALSCORE))																						AS WONJUMSU
+                        , CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))	AS HWANSAN_GRADE
+                        , SUM(CAST(UNIT AS NUMERIC(2)))																								AS UNIT_SUM
+                        , SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2)))															AS GRADE_SUM
+                        , COUNT(*)																													AS GWAMOKSU
+                        , ROW_NUMBER () OVER(PARTITION BY A.SUHEOM_NO ORDER BY CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))) RNK
+                    FROM	IR_IPSIMAST_M A	
+
+                        LEFT OUTER JOIN
+                        dbo.IR_SUBJECTSCORE_M B
+                    ON	A.IPHAK_YEAR = B.IPHAK_YEAR
+                    AND	A.SUHEOM_NO = B.SUHEOM_NO
+                    AND	B.GRADE	in ('2','3')
+                    AND NOT  (B.GRADE = '3' AND TERM = '2')
+                    AND	B.RANKINGGRADE IN ('1','2','3','4','5','6','7','8','9') 
+
+                        LEFT OUTER JOIN
+
+                        dbo.IR_SEONGJEOKYOSOBAEJEOM_M C
+
+                    ON  A.IPHAK_YEAR		= C.IPHAK_YEAR
+                    AND	A.MOJIP_CD			= C.MOJIP_CD
+                    AND	A.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                    AND	A.JIMANGHAKGWA1_CD	= C.MOJIPDANWI_CD
+                    AND	A.JEONHYEONG_CD		= C.JEONHYEONG_CD
+                    
+                    WHERE	A.IPHAK_YEAR		= @IN_IPHAK_YEAR
+                    AND	A.MOJIP_CD			= @IN_MOJIP_CD
+                    AND	A.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+                    AND	A.JIWONJA_GBCD	   != '03'
+                    AND	C.SEONGJEOKYOSO_CD	= '01'
+                    AND NOT EXISTS(SELECT 1
+                                    FROM COMMON.dbo.SF_CS_COMMON_UPCODE('IC034') IC034
+                                    WHERE A.BULHAKGYEOK_SAYU_CD = IC034.CD
+                                        AND IC034.CD2 = '1')
+                
+                GROUP BY A.IPHAK_YEAR, A.SUHEOM_NO, B.GRADE, B.TERM, A.GOGYO_JOLEOP_YEAR, C.BAEJEOM, A.JIMANGHAKGWA1_CD, A.JEONHYEONG_CD
+                ) M2
+                WHERE M2.RNK = 2
+                ) S2
+                ON A.IPHAK_YEAR = S2.IPHAK_YEAR
+                AND A.SUHEOM_NO  = S2.SUHEOM_NO
+            
+            LEFT JOIN
+                (
+                SELECT
+                    S3.IPHAK_YEAR,
+                    S3.SUHEOM_NO,
+                    S3.GWAMOK5_AVG
+                FROM
+                    (
+                    SELECT
+                        M3.IPHAK_YEAR		AS IPHAK_YEAR,
+                        M3.SUHEOM_NO		AS SUHEOM_NO,					
+                        M3.GRADE			AS GRADE,
+                        M3.TERM				AS TERM,
+                        dbo.SF_IC_GWAMOK5_AVG_GRADE(M3.IPHAK_YEAR, M3.SUHEOM_NO, M3.GRADE, M3.TERM, '5')	AS GWAMOK5_AVG,
+                        ROW_NUMBER () OVER(PARTITION BY M3.SUHEOM_NO ORDER BY M3.GRADE, M3.TERM DESC) AS RNK
+                    FROM
+                        (
+                        SELECT	
+                            A.IPHAK_YEAR																												AS IPHAK_YEAR
+                            , A.SUHEOM_NO																													AS SUHEOM_NO
+                            , B.GRADE																														AS GRADE
+                            , B.TERM																														AS TERM
+                            , CASE WHEN GRADE = '2' THEN SUM(CONVERT(INTEGER, B.STUDENTCOUNT)) END														AS STUDENTCOUNT
+                            , SUM(CONVERT(INTEGER, B.ORIGINALSCORE))																						AS WONJUMSU
+                            , CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))	AS HWANSAN_GRADE
+                            , SUM(CAST(UNIT AS NUMERIC(2)))																								AS UNIT_SUM
+                            , SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2)))															AS GRADE_SUM
+                            , COUNT(*)																													AS GWAMOKSU
+                            , ROW_NUMBER () OVER(PARTITION BY A.SUHEOM_NO ORDER BY CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))) RNK
+                        FROM	IR_IPSIMAST_M A	
+
+                            LEFT OUTER JOIN
+                            dbo.IR_SUBJECTSCORE_M B
+                        ON	A.IPHAK_YEAR = B.IPHAK_YEAR
+                        AND	A.SUHEOM_NO = B.SUHEOM_NO
+                        AND	B.GRADE	in ('2','3')
+                        AND NOT  (B.GRADE = '3' AND TERM = '2')
+                        AND	B.RANKINGGRADE IN ('1','2','3','4','5','6','7','8','9') 
+
+                            LEFT OUTER JOIN
+
+                            dbo.IR_SEONGJEOKYOSOBAEJEOM_M C
+
+                        ON  A.IPHAK_YEAR		= C.IPHAK_YEAR
+                        AND	A.MOJIP_CD			= C.MOJIP_CD
+                        AND	A.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                        AND	A.JIMANGHAKGWA1_CD	= C.MOJIPDANWI_CD
+                        AND	A.JEONHYEONG_CD		= C.JEONHYEONG_CD
+                        
+                        WHERE	A.IPHAK_YEAR		= @IN_IPHAK_YEAR
+                        AND	A.MOJIP_CD			= @IN_MOJIP_CD
+                        AND	A.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+                        AND	A.JIWONJA_GBCD	   != '03'
+                        AND	C.SEONGJEOKYOSO_CD	= '01'
+                        AND NOT EXISTS(SELECT 1
+                                        FROM COMMON.dbo.SF_CS_COMMON_UPCODE('IC034') IC034
+                                        WHERE A.BULHAKGYEOK_SAYU_CD = IC034.CD
+                                            AND IC034.CD2 = '1')
+                    GROUP BY A.IPHAK_YEAR, A.SUHEOM_NO, B.GRADE, B.TERM, A.GOGYO_JOLEOP_YEAR, C.BAEJEOM, A.JIMANGHAKGWA1_CD, A.JEONHYEONG_CD
+                    ) M3
+                    WHERE M3.RNK IN (1, 2)
+                    ) S3
+                    WHERE S3.RNK = 1
+                ) T_AVG5
+                ON A.IPHAK_YEAR = T_AVG5.IPHAK_YEAR
+                AND A.SUHEOM_NO  = T_AVG5.SUHEOM_NO
+                
+                LEFT JOIN
+                (
+                SELECT
+                    S4.IPHAK_YEAR,
+                    S4.SUHEOM_NO,
+                    S4.GWAMOK5_AVG
+                FROM
+                    (
+                    SELECT
+                        M4.IPHAK_YEAR		AS IPHAK_YEAR,
+                        M4.SUHEOM_NO		AS SUHEOM_NO,					
+                        M4.GRADE			AS GRADE,
+                        M4.TERM				AS TERM,
+                        dbo.SF_IC_GWAMOK5_AVG_GRADE(M4.IPHAK_YEAR, M4.SUHEOM_NO, M4.GRADE, M4.TERM, '5')	AS GWAMOK5_AVG,
+                        ROW_NUMBER () OVER(PARTITION BY M4.SUHEOM_NO ORDER BY M4.GRADE, M4.TERM) AS RNK
+                    FROM
+                        (
+                        SELECT	
+                            A.IPHAK_YEAR																												AS IPHAK_YEAR
+                            , A.SUHEOM_NO																													AS SUHEOM_NO
+                            , B.GRADE																														AS GRADE
+                            , B.TERM																														AS TERM
+                            , CASE WHEN GRADE = '2' THEN SUM(CONVERT(INTEGER, B.STUDENTCOUNT)) END														AS STUDENTCOUNT
+                            , SUM(CONVERT(INTEGER, B.ORIGINALSCORE))																						AS WONJUMSU
+                            , CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))	AS HWANSAN_GRADE
+                            , SUM(CAST(UNIT AS NUMERIC(2)))																								AS UNIT_SUM
+                            , SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2)))															AS GRADE_SUM
+                            , COUNT(*)																													AS GWAMOKSU
+                            , ROW_NUMBER () OVER(PARTITION BY A.SUHEOM_NO ORDER BY CAST(SUM(CAST(UNIT AS NUMERIC(2)) * CAST(RANKINGGRADE AS NUMERIC(2))) / (SUM(CAST(UNIT AS NUMERIC(2)))) AS NUMERIC(8, 5))) RNK
+                        FROM	IR_IPSIMAST_M A	
+
+                            LEFT OUTER JOIN
+                            dbo.IR_SUBJECTSCORE_M B
+                        ON	A.IPHAK_YEAR = B.IPHAK_YEAR
+                        AND	A.SUHEOM_NO = B.SUHEOM_NO
+                        AND	B.GRADE	in ('2','3')
+                        AND NOT  (B.GRADE = '3' AND TERM = '2')
+                        AND	B.RANKINGGRADE IN ('1','2','3','4','5','6','7','8','9') 
+
+                            LEFT OUTER JOIN
+
+                            dbo.IR_SEONGJEOKYOSOBAEJEOM_M C
+
+                        ON  A.IPHAK_YEAR		= C.IPHAK_YEAR
+                        AND	A.MOJIP_CD			= C.MOJIP_CD
+                        AND	A.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                        AND	A.JIMANGHAKGWA1_CD	= C.MOJIPDANWI_CD
+                        AND	A.JEONHYEONG_CD		= C.JEONHYEONG_CD
+                        
+                        WHERE	A.IPHAK_YEAR		= @IN_IPHAK_YEAR
+                        AND	A.MOJIP_CD			= @IN_MOJIP_CD
+                        AND	A.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+                        AND	A.JIWONJA_GBCD	   != '03'
+                        AND	C.SEONGJEOKYOSO_CD	= '01'
+                        AND NOT EXISTS(SELECT 1
+                                        FROM COMMON.dbo.SF_CS_COMMON_UPCODE('IC034') IC034
+                                        WHERE A.BULHAKGYEOK_SAYU_CD = IC034.CD
+                                            AND IC034.CD2 = '1')
+                    GROUP BY A.IPHAK_YEAR, A.SUHEOM_NO, B.GRADE, B.TERM, A.GOGYO_JOLEOP_YEAR, C.BAEJEOM, A.JIMANGHAKGWA1_CD, A.JEONHYEONG_CD
+                    ) M4
+                    WHERE M4.RNK IN (1, 2)
+                    ) S4
+                    WHERE S4.RNK = 1
+                ) B_AVG5
+                ON A.IPHAK_YEAR = B_AVG5.IPHAK_YEAR
+                AND A.SUHEOM_NO  = B_AVG5.SUHEOM_NO
+            
+            
+            
+            LEFT JOIN
+            (
+                SELECT
+                G_SCORE.IPHAK_YEAR,
+                G_SCORE.SUHEOM_NO,
+                dbo.SF_IC_GWAMOK5_AVG_GRADE(G_SCORE.IPHAK_YEAR, G_SCORE.SUHEOM_NO, NULL, NULL, '5')	AS GWAMOK5_AVG,
+                SUM(CASE WHEN G_SCORE.SCORE > 0 THEN 1 ELSE 0 END)							AS GWAMOK_SUM,
+                SUM(CASE WHEN G_SCORE.SUBJECTCODE = '01' THEN G_SCORE.SCORE END)			AS KOR,
+                SUM(CASE WHEN G_SCORE.SUBJECTCODE = '02' THEN G_SCORE.SCORE END)			AS ENG,
+                SUM(CASE WHEN G_SCORE.SUBJECTCODE = '03' THEN G_SCORE.SCORE END)			AS MATH,
+                SUM(CASE WHEN G_SCORE.SUBJECTCODE = '04' THEN G_SCORE.SCORE END)			AS HIS,
+                SUM(CASE WHEN G_SCORE.SUBJECTCODE = '05' THEN G_SCORE.SCORE END)			AS SOC,
+                SUM(CASE WHEN G_SCORE.SUBJECTCODE = '06' THEN G_SCORE.SCORE END)			AS SCI,
+                ISNULL(SUM(CASE WHEN G_SCORE.SUBJECTCODE = '07' THEN G_SCORE.SCORE END),0)	AS ETC1,
+                ISNULL(SUM(CASE WHEN G_SCORE.SUBJECTCODE = '08' THEN G_SCORE.SCORE END),0)	AS ETC2
+                FROM
+                (
+                    SELECT IPHAK_YEAR,
+                        SUHEOM_NO,
+                        SUBJECTCODE,
+                        SCORE			 
+                    FROM IR_GEOMJEONGGOSI_SUBJECTSCORE_M
+                ) G_SCORE
+                GROUP BY G_SCORE.IPHAK_YEAR, G_SCORE.SUHEOM_NO
+            ) G
+            ON A.IPHAK_YEAR = G.IPHAK_YEAR
+            AND A.SUHEOM_NO = G.SUHEOM_NO
+        
+                WHERE	A.IPHAK_YEAR		= @IN_IPHAK_YEAR
+                AND	A.MOJIP_CD			= @IN_MOJIP_CD
+                AND	A.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+                AND	((ISNULL(@IN_JIMANGHAKGWA_CD, '%') = '%' AND 1 = 1) OR (ISNULL(@IN_JIMANGHAKGWA_CD, '%')	!= '%' AND A.JIMANGHAKGWA1_CD	= @IN_JIMANGHAKGWA_CD))
+                AND	((ISNULL(@IN_JEONHYEONG_CD, '%')	= '%' AND 1 = 1) OR (ISNULL(@IN_JEONHYEONG_CD, '%')		!= '%' AND A.JEONHYEONG_CD		= @IN_JEONHYEONG_CD))
+                AND NOT EXISTS(SELECT 1
+                                FROM COMMON.dbo.SF_CS_COMMON_UPCODE('IC034') IC034
+                                WHERE ISNULL(A.BULHAKGYEOK_SAYU_CD, '') = IC034.CD
+                                    AND IC034.CD2 = '1')
+                /* 연계전형자 중 학생부 교과성적 5등급 이하자 석차 부여 대상에서 제외
+                    사정제외에서 누락될 수 있으므로... */
+                AND	NOT EXISTS(SELECT 1
+                                    FROM dbo.IR_HAKSAENGBU_M B WITH(NOLOCK)
+                                WHERE A.IPHAK_YEAR		= B.IPHAK_YEAR
+                                    AND A.SUHEOM_NO		= B.SUHEOM_NO
+                                    AND A.JEONHYEONG_CD	= '11'
+                                    AND B.AVG_GRADE		>= CONVERT(FLOAT, ISNULL((SELECT YEONGYE_NAESIN_LIMIT_GRADE	--연계전형 지원제한등급
+                                                                                    FROM dbo.IR_YEARMOJIPDANWI_C C WITH(NOLOCK)
+                                                                                    WHERE C.IPHAK_YEAR			= A.IPHAK_YEAR
+                                                                                        AND C.MOJIPDANWI_CD		= A.JIMANGHAKGWA1_CD
+                                                                                        AND C.YEONGYE_HAKGWA_YN	= '1'), 0))
+                                )								  
+                
+                /* 연계전형자 중 연계모집단위의 연계고등학교 자를 제외한 나머지 인원도 석차 부여 대상에서 제외
+                    사정제외에서 누락될 수 있으므로... */
+                AND NOT EXISTS(SELECT 1
+                                FROM dbo.IR_IPSIMAST_M B WITH(NOLOCK)
+                                WHERE A.IPHAK_YEAR		= B.IPHAK_YEAR
+                                    AND A.MOJIP_CD			= B.MOJIP_CD
+                                    AND A.MOJIPCHASU_CD	= B.MOJIPCHASU_CD
+                                    AND A.SUHEOM_NO		= B.SUHEOM_NO
+                                    AND B.JEONHYEONG_CD	= '11'
+                                    AND NOT EXISTS(SELECT 1
+                                                    FROM dbo.IR_YEONGYEDAESANGGYO_M C WITH(NOLOCK)
+                                                    WHERE B.IPHAK_YEAR			= C.IPHAK_YEAR
+                                                    AND B.MOJIP_CD			= C.MOJIP_CD
+                                                    AND B.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                                                    AND B.JIMANGHAKGWA1_CD	= C.MOJIPDANWI_CD
+                                                    AND B.NEIS_GOGYO_CD		= C.GOGYO_CD)
+                                )
+            ) X
+    WHERE IR_IPSIMAST_M.IPHAK_YEAR			= X.IPHAK_YEAR
+        AND IR_IPSIMAST_M.MOJIP_CD			= X.MOJIP_CD
+        AND IR_IPSIMAST_M.MOJIPCHASU_CD		= X.MOJIPCHASU_CD
+        AND IR_IPSIMAST_M.SUHEOM_NO			= X.SUHEOM_NO
+        AND IR_IPSIMAST_M.IPHAK_YEAR			= @IN_IPHAK_YEAR
+        AND IR_IPSIMAST_M.MOJIP_CD			= @IN_MOJIP_CD
+        AND IR_IPSIMAST_M.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+        AND ((ISNULL(@IN_JIMANGHAKGWA_CD, '%') = '%' AND 1 = 1) OR (ISNULL(@IN_JIMANGHAKGWA_CD, '%')	!= '%' AND IR_IPSIMAST_M.JIMANGHAKGWA2_CD	= @IN_JIMANGHAKGWA_CD))
+        AND ((ISNULL(@IN_JEONHYEONG_CD, '%')	= '%' AND 1 = 1) OR (ISNULL(@IN_JEONHYEONG_CD, '%')		!= '%' AND IR_IPSIMAST_M.JEONHYEONG_CD		= @IN_JEONHYEONG_CD))
+
+ELSE IF @IN_JIMANG_GUBUN = '2'
+
+    UPDATE IR_IPSIMAST_M SET
+        SEOKCHA2	= X.RANK_ORDER
+        , UPDATE_ID	= @IN_UPDATE_ID
+        , UPDATE_IP	= @IN_UPDATE_IP
+        , UPDATE_PGM	= @IN_UPDATE_PGM
+        , UPDATE_DATE	= GETDATE()
+        FROM	(
+                SELECT	/* 2013년까지의 동점자 처리기준 적용 */
+                    CASE WHEN CAST(@IN_IPHAK_YEAR AS NUMERIC) <= 2013 THEN
+
+                            RANK() OVER(PARTITION BY		A.IPHAK_YEAR,
+                                                            A.MOJIP_CD,
+                                                            A.MOJIPCHASU_CD,
+                                                            --C.JEONGWONNAEOE_GBCD,
+                                                            A.JIMANGHAKGWA2_CD,
+                                                            A.JIMANGJUYA2_CD,
+                                                            A.JEONHYEONG_CD,
+                                                            A.SEBU_JEONHYEONG_CD
+
+                                                    ORDER BY	A.IPSI_TOTPNT						DESC,										--0.	총점순
+                                                            E.SUNEUNG_TOTPNT					DESC,										--1.	대학수학능력시험성적이 높은 자
+                                                            B.HAKSAENGBU_TOTPNT					DESC,										--2.	환산점수 높은자															
+                                                            B.AVG_GRADE2						ASC,										--3.	2학년 2학기 환산평균등급이 높은자
+                                                            B.AVG_GRADE1						ASC,										--4.	2학년 1학기 환산평균등급이 높은자
+                                                            ISNULL(B.GYEOSEOK_ILSU, 0)			ASC,										--5.	전학년 결석일수가 적은자
+                                                            ISNULL(A.GYEOLSEOK_ILSU, 0)			ASC,										--5.1	서류전형 대상자용 결석일수
+                                                            B.SUM_UNIT							DESC,										--6.	이수단위합이 높은 자
+                                                            B.SUM_UNIT2							DESC,										--7.	2학년 2학기 이수단위합이 높은자
+                                                            B.SUM_UNIT1							DESC,										--8.	2학년 1학기 이수단위합이 높은자
+                                                            B.GWAMOK_SU							DESC,										--9.	이수과목수가 높은 자
+                                                            B.GWAMOK_SU2						DESC,										--10.	2학년 2학기 이수과목수가 높은자
+                                                            B.GWAMOK_SU1						DESC,										--11.	2학년 1학기 이수과목수가 높은자
+                                                            CASE WHEN ISNUMERIC(A.GOGYO_JOLEOP_YEAR) = 1 THEN
+                                                                        CAST(A.GOGYO_JOLEOP_YEAR AS NUMERIC)
+                                                                    ELSE 0
+                                                            END									DESC,										--12.	최근 연도 졸업(예정)자
+                                                            
+                                                            B.GWAMOK5_AVG_GRADE2				ASC,										--13.	2학년 2학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            B.GWAMOK5_AVG_GRADE1				ASC,										--14.	2학년 1학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            
+                                                            B.TOT_JAEJEOKSAENG					DESC,										--15.	2학년 전체 재적생수가 많은 자
+                                                            B.TOT_JAEJEOKSAENG2					DESC,										--16.	2학년 2학기 전체 재적생수가 많은 자
+                                                            
+                                                            B.GEUMJEONG_CHONGJEOM				DESC,										--17-1. 총점이 높은 자 기준 (검정고시 과목 총점)
+                                                            IPSI.dbo.SF_IC_GWAMOK5_AVG_GRADE(A.IPHAK_YEAR, A.SUHEOM_NO, '', '', '3') ASC,	--17-2. 상위 3개 과목 환산평균등급 상위자
+                                                            IPSI.dbo.SF_IC_GWAMOK5_AVG_GRADE(A.IPHAK_YEAR, A.SUHEOM_NO, '', '', '2') ASC,	--17-3. 상위 2개 과목 환산평균등급 상위자
+                                                            
+                                                            /* 전문대학이상졸업(예정)자전형 */
+                                                            A.DAEJOL_PERCTG_SCORE					DESC,									-- 백분위점수가 높은 자
+                                                            CAST(ISNULL(IC062.CD_NM, 0) AS NUMERIC) DESC,									-- 최종학기 평점평균이 높은 자
+                                                            A.DAEJOL_TOT_ACQU_CDT					DESC,									-- 총 취득학점이 높은 자
+                                                            A.GRAD_UNIV_SCHL_GRAD_DT				DESC									-- 최근 졸업(예정)자
+                                                            )
+
+                            /* 2014년 이후 동점자 처리기준 적용 */
+                            ELSE
+                            
+                            RANK() OVER(PARTITION BY		A.IPHAK_YEAR,
+                                                            A.MOJIP_CD,
+                                                            A.MOJIPCHASU_CD,
+                                                            --C.JEONGWONNAEOE_GBCD,
+                                                            A.JIMANGHAKGWA2_CD,
+                                                            A.JIMANGJUYA2_CD,
+                                                            A.JEONHYEONG_CD,
+                                                            A.SEBU_JEONHYEONG_CD
+
+                                                    ORDER BY	A.IPSI_TOTPNT						DESC,	--0.	총점순
+                                                            E.SUNEUNG_TOTPNT					DESC,	--1.	대학수학능력시험성적이 높은 자
+                                                            B.AVG_GRADE2						ASC,	--2.	2학년 2학기 환산평균등급이 높은자
+                                                            B.AVG_GRADE1						ASC,	--3.	2학년 1학기 환산평균등급이 높은자
+                                                            B.SUM_UNIT							DESC,	--4.	이수단위합이 높은 자
+                                                            B.GWAMOK_SU							DESC,	--5.	이수과목수가 높은 자
+                                                            B.GWAMOK5_AVG_GRADE2				ASC,	--6.	2학년 2학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            B.GWAMOK5_AVG_GRADE1				ASC,	--7.	2학년 1학기 학생부 상위 5개 과목 환산평균등급 상위자
+                                                            B.TOT_JAEJEOKSAENG					DESC,	--8.	2학년 전체 재적생수가 많은 자
+                                                            
+                                                            B.GEUMJEONG_ISUDANWI_CHONGJEOM		DESC,	--8-1.	이수단위 적용 환산 총점수가 높은 자
+                                                            B.GEUMJEONG_CHONGJEOM				DESC,	--8-2.	취득성적 총점이 높은 자
+                                                            
+                                                            /* 전문대학이상졸업(예정)자전형 */
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_PERCTG_SCORE	ELSE 0 END	DESC,		-- 백분위점수가 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN CAST(ISNULL(IC062.CD_NM, 0) AS NUMERIC) ELSE 0 END DESC, -- 최종학기 평점평균이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.DAEJOL_TOT_ACQU_CDT ELSE 0 END	DESC,		-- 총 취득학점이 높은 자
+                                                            CASE WHEN A.JEONHYEONG_CD = '05' THEN A.GRAD_UNIV_SCHL_GRAD_DT ELSE 0 END DESC		-- 최근 졸업(예정)자
+                                                            )
+
+                    END									AS RANK_ORDER,
+                    A.IPHAK_YEAR						AS IPHAK_YEAR,
+                    A.MOJIP_CD							AS MOJIP_CD,
+                    A.MOJIPCHASU_CD						AS MOJIPCHASU_CD,
+                    A.JIWONJA_GBCD						AS JIWONJA_GBCD,
+                    A.JIMANGHAKGWA2_CD					AS JIMANGHAKGWA2_CD,
+                    A.JIMANGJUYA2_CD					AS JIMANGJUYA2_CD,
+                    A.JEONHYEONG_CD						AS JEONHYEONG_CD,
+                    A.SUHEOM_NO							AS SUHEOM_NO,
+                    A.SUHEOMSAENG_NM					AS SUHEOMSAENG_NM,
+                    CASE WHEN ISNUMERIC(A.GOGYO_JOLEOP_YEAR) = 1 THEN
+                                CAST(A.GOGYO_JOLEOP_YEAR AS NUMERIC)
+                            ELSE 0
+                    END									AS GOGYO_JOLEOP_YEAR,
+                    A.IPSI_TOTPNT						AS IPSI_TOTPNT,
+                    E.SUNEUNG_TOTPNT					AS SUNEUNG_TOTPNT,
+                    B.GYEOSEOK_ILSU						AS GYEOSEOK_ILSU,
+                    B.HAKSAENGBU_TOTPNT					AS HAKSAENGBU_TOTPNT,
+                    B.AVG_GRADE1						AS AVG_GRADE,
+                    B.SUM_UNIT1							AS SUM_UNIT1,
+                    B.SUM_UNIT2							AS SUM_UNIT2,
+                    B.SUM_UNIT							AS SUM_UNIT,
+                    B.GWAMOK_SU							AS GWAMOK_SU,
+                    B.GWAMOK_SU1						AS GWAMOK_SU1,
+                    B.GWAMOK_SU2						AS GWAMOK_SU2,
+                    B.TOT_JAEJEOKSAENG					AS TOT_JAEJEOKSAENG,
+                    B.TOT_JAEJEOKSAENG2					AS TOT_JAEJEOKSAENG2,
+                    B.AVG_GRADE2						AS AVG_GRADE2,
+                    B.AVG_GRADE1						AS AVG_GRADE1,
+                    B.GWAMOK5_AVG_GRADE2				AS GWAMOK5_AVG_GRADE2,
+                    B.GWAMOK5_AVG_GRADE1				AS GWAMOK5_AVG_GRADE1,
+                    B.GEUMJEONG_CHONGJEOM				AS GEUMJEONG_CHONGJEOM
+                    
+                FROM	dbo.IR_IPSIMAST_M A WITH(NOLOCK)
+
+                /*
+                    JOIN
+                    
+                    dbo.IR_MOJIPINWON_M C WITH(NOLOCK)
+
+                ON	A.IPHAK_YEAR		= C.IPHAK_YEAR
+                AND	A.MOJIP_CD			= C.MOJIP_CD
+                AND	A.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                AND	A.JEONHYEONG_CD		= C.JEONHYEONG_CD
+                AND	A.JIMANGHAKGWA2_CD	= C.MOJIPDANWI_CD
+                AND	A.JIMANGJUYA2_CD	= C.JUYA_CD
+                */				   
+
+                    JOIN
+
+                    dbo.IR_HAKSAENGBU_M B WITH(NOLOCK)
+                
+                ON	A.IPHAK_YEAR	= B.IPHAK_YEAR
+                AND	A.SUHEOM_NO		= B.SUHEOM_NO
+
+                    LEFT JOIN
+
+                    dbo.IR_SUNEUNG_M E WITH(NOLOCK)
+
+                ON	A.IPHAK_YEAR	= E.IPHAK_YEAR
+                AND	A.JUMIN_NO		= E.JUMIN_NO
+                AND	A.SUNEUNG_NO	= E.SUNEUNG_NO
+
+                    LEFT JOIN
+                    
+                    dbo.IR_JEONJEOKDAEHWANSANPYO_M DAEHWANSAN WITH(NOLOCK)
+
+                ON	A.IPHAK_YEAR					= DAEHWANSAN.IPHAK_YEAR
+                AND	A.MOJIP_CD						= DAEHWANSAN.MOJIP_CD
+                AND	A.MOJIPCHASU_CD					= DAEHWANSAN.MOJIPCHASU_CD
+                AND	A.DAEJOL_PYEONGJEOMAVG_MANPNT	= DAEHWANSAN.PYEONGJEOM_CD
+                AND	A.DAEJOL_LAST_PYEONGJEOMAVG BETWEEN DAEHWANSAN.PYEONGJEOM_FROM AND DAEHWANSAN.PYEONGJEOM_TO
+
+                    LEFT OUTER JOIN
+                    
+                    COMMON.dbo.SF_CS_COMMON_UPCODE('IC062') IC062
+
+                ON	IC062.CD = DAEHWANSAN.HWANSAN_CD
+
+                WHERE	A.IPHAK_YEAR		= @IN_IPHAK_YEAR
+                AND	A.MOJIP_CD			= @IN_MOJIP_CD
+                AND	A.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+                AND	((ISNULL(@IN_JIMANGHAKGWA_CD, '%') = '%' AND 1 = 1) OR (ISNULL(@IN_JIMANGHAKGWA_CD, '%')	!= '%' AND A.JIMANGHAKGWA2_CD	= @IN_JIMANGHAKGWA_CD))
+                AND	((ISNULL(@IN_JEONHYEONG_CD, '%')	= '%' AND 1 = 1) OR (ISNULL(@IN_JEONHYEONG_CD, '%')		!= '%' AND A.JEONHYEONG_CD		= @IN_JEONHYEONG_CD))
+
+                AND NOT EXISTS(SELECT 1
+                                FROM COMMON.dbo.SF_CS_COMMON_UPCODE('IC034') IC034
+                                WHERE ISNULL(A.BULHAKGYEOK_SAYU_CD, '') = IC034.CD
+                                    AND IC034.CD2 = '1')
+                /* 연계전형자 중 학생부 교과성적 5등급 이하자 석차 부여 대상에서 제외
+                    사정제외에서 누락될 수 있으므로... */
+                AND	NOT EXISTS(SELECT 1
+                                    FROM dbo.IR_HAKSAENGBU_M B WITH(NOLOCK)
+                                WHERE A.IPHAK_YEAR		= B.IPHAK_YEAR
+                                    AND A.SUHEOM_NO		= B.SUHEOM_NO
+                                    AND A.JEONHYEONG_CD	= '11'
+                                    AND B.AVG_GRADE		>= CONVERT(FLOAT, ISNULL((SELECT YEONGYE_NAESIN_LIMIT_GRADE	--연계전형 지원제한등급
+                                                                                    FROM dbo.IR_YEARMOJIPDANWI_C C WITH(NOLOCK)
+                                                                                    WHERE C.IPHAK_YEAR			= A.IPHAK_YEAR
+                                                                                        AND C.MOJIPDANWI_CD		= A.JIMANGHAKGWA2_CD
+                                                                                        AND C.YEONGYE_HAKGWA_YN	= '1'), 0))
+                                )								  
+                
+                /* 연계전형자 중 연계모집단위의 연계고등학교 자를 제외한 나머지 인원도 석차 부여 대상에서 제외
+                    사정제외에서 누락될 수 있으므로... */
+                AND NOT EXISTS(SELECT 1
+                                FROM dbo.IR_IPSIMAST_M B WITH(NOLOCK)
+                                WHERE A.IPHAK_YEAR		= B.IPHAK_YEAR
+                                    AND A.MOJIP_CD			= B.MOJIP_CD
+                                    AND A.MOJIPCHASU_CD	= B.MOJIPCHASU_CD
+                                    AND A.SUHEOM_NO		= B.SUHEOM_NO
+                                    AND B.JEONHYEONG_CD	= '11'
+                                    AND NOT EXISTS(SELECT 1
+                                                    FROM dbo.IR_YEONGYEDAESANGGYO_M C WITH(NOLOCK)
+                                                    WHERE B.IPHAK_YEAR			= C.IPHAK_YEAR
+                                                    AND B.MOJIP_CD			= C.MOJIP_CD
+                                                    AND B.MOJIPCHASU_CD		= C.MOJIPCHASU_CD
+                                                    AND B.JIMANGHAKGWA2_CD	= C.MOJIPDANWI_CD
+                                                    AND B.NEIS_GOGYO_CD		= C.GOGYO_CD)
+                                )
+            ) X
+    WHERE IR_IPSIMAST_M.IPHAK_YEAR			= X.IPHAK_YEAR
+        AND IR_IPSIMAST_M.MOJIP_CD			= X.MOJIP_CD
+        AND IR_IPSIMAST_M.MOJIPCHASU_CD		= X.MOJIPCHASU_CD
+        AND IR_IPSIMAST_M.SUHEOM_NO			= X.SUHEOM_NO
+        AND IR_IPSIMAST_M.IPHAK_YEAR			= @IN_IPHAK_YEAR
+        AND IR_IPSIMAST_M.MOJIP_CD			= @IN_MOJIP_CD
+        AND IR_IPSIMAST_M.MOJIPCHASU_CD		= @IN_MOJIPCHASU_CD
+        AND ((ISNULL(@IN_JIMANGHAKGWA_CD, '%') = '%' AND 1 = 1) OR (ISNULL(@IN_JIMANGHAKGWA_CD, '%')	!= '%' AND IR_IPSIMAST_M.JIMANGHAKGWA2_CD	= @IN_JIMANGHAKGWA_CD))
+        AND ((ISNULL(@IN_JEONHYEONG_CD, '%')	= '%' AND 1 = 1) OR (ISNULL(@IN_JEONHYEONG_CD, '%')		!= '%' AND IR_IPSIMAST_M.JEONHYEONG_CD		= @IN_JEONHYEONG_CD))
+        
+
+END	
