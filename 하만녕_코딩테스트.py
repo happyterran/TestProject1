@@ -16,3 +16,6 @@ print(arr[0],arr[1])
 print(arr[0],arr[1])
 #asdf
 print(arr[0],arr[1])
+
+#신입이 작성한 코드
+print(arr[0],arr[1])
