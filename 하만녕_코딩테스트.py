@@ -10,5 +10,5 @@ for i in range(D):
     else:
         arr[int(not i%2)] += arr[i%2]
         arr[i%2] -= arr[i%2]
-
+#asdf
 print(arr[0],arr[1])
